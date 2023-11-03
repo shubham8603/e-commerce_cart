@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <title>E-commerce Cart</title>
+    <style>
+        form {
+            text-align: center;
+        }
+
+        form,
+        h2,
+        ul,
+        li {
+            text-align: center;
+        }
+    </style>
+</head>
+<body style="background-color: greenyellow;">
+    <form style="background-color: goldenrod;" onsubmit="saveToServer(event)">
+        <h1 style="background-color: blueviolet;">ITEM DETAILS</h1>
+        <div>
+            <label>PRODUCT NAME</label>
+        </div>
+        <div>
+            <input type="text" id="productname" name="productname" style="background-color: blue;" required />
+        </div>
+        <div>
+            <label>PRODUCT PRICE</label>
+        </div>
+        <div>
+            <input type="number" id="price" name="price" style="background-color: blue;" required />
+        </div>
+        <br>
+        <input type="submit" style="background-color: green;">
+    </form>
+
+    <section id="items" style="background-color: blueviolet;">
+        <h2>user cart</h2>
+        <ul id="usercart"></ul>
+    </section>
+
+    <div style="background-color: blueviolet;">
+        <h2>Total Price: <span id="totalPrice">0</span></h2>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.4/axios.min.js"></script> 
+    
+    <script>
+        // Function to upload data to crudcrud
+        function saveToServer(event) {
+            event.preventDefault();
+            const productname = event.target.productname.value;
+            const price = event.target.price.value;
+
+            const item = {
+                productname: productname,
+                price: parseFloat(price) // Convert price to a float
+            }; 
+            
+            // POST request using crudcrud.com
+            axios.post("https://crudcrud.com/api/d8b9d0fbab004399920e5df83186fc37/e-commerceData", item)
+                .then((response) => {
+                    console.log(response);
+                    event.target.productname.value = "";
+                    event.target.price.value = "";
+                    loadDataFromServer();
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+
+        // Function to load data from crudcrud
+        function loadDataFromServer() {
+            // GET request using crudcrud.com
+            axios.get("https://crudcrud.com/api/d8b9d0fbab004399920e5df83186fc37/e-commerceData")
+                .then((response) => {
+                    const usercart = document.getElementById("usercart");
+                    usercart.innerHTML = "";
+                    let totalPrice = 0;
+
+                    response.data.forEach((item, index) => {
+                        const productlist = document.createElement("li");
+                        productlist.textContent = `Name: ${item.productname}, Price: ${item.price.toFixed(2)}`;
+
+                        totalPrice += item.price;
+
+                        // Edit button property
+                        const editButton = document.createElement("button");
+                        editButton.textContent = "Edit";
+                        editButton.onclick = () => editUser(item._id, item.productname, item.price);
+
+                        // Delete button property
+                        const deleteButton = document.createElement("button");
+                        deleteButton.textContent = "Delete";
+                        deleteButton.onclick = () => deleteItem(item._id);
+
+                        // Adding buttons
+                        productlist.appendChild(editButton);
+                        productlist.appendChild(deleteButton);
+                        usercart.appendChild(productlist);
+                    });
+
+                    // Display total price
+                    const totalPriceElement = document.getElementById("totalPrice");
+                    totalPriceElement.textContent = "Total Price: RS " + totalPrice.toFixed(2);
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+
+        // Function for edit
+        function editUser(itemId, productname, price) {
+            const newProductname = prompt("Enter new product name", productname);
+            const newPrice = prompt("Enter new price", price);
+
+            if (newProductname !== null && !isNaN(newPrice)) {
+                const updatedItem = {
+                    productname: newProductname,
+                    price: parseFloat(newPrice) // Convert newPrice to a float
+                };
+                // PUT request using crudcrud.com
+                axios.put(`https://crudcrud.com/api/d8b9d0fbab004399920e5df83186fc37/e-commerceData/${itemId}`, updatedItem)
+                    .then((response) => {
+                        console.log(response);
+                        loadDataFromServer();
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            }
+        }
+
+        // Function for delete
+        function deleteItem(itemId) {
+            const confirmation = confirm("Are you sure you want to delete this item?");
+
+            if (confirmation) {
+                // DELETE request using crudcrud
+                axios.delete(`https://crudcrud.com/api/d8b9d0fbab004399920e5df83186fc37/e-commerceData/${itemId}`)
+                    .then((response) => {
+                        console.log(response);
+                        loadDataFromServer();
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            }
+        }
+
+        // Load data when the page loads for display
+        loadDataFromServer();
+    </script>
+</body>
+</html>
